@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Manage</title>
+
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="font/glyphicons-halflings-regular.ttf">
+  <link rel="stylesheet" href="css/manage.css">
+
+</head>
+
+<body>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+  <!--Navber-->
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="index.html">Face Dect</a>
+      </div>
+      <ul class="nav navbar-nav">
+
+        <li><a href="search.html">Search</a></li>
+        <li><a href="live.html">Live Stream</a></li>
+        <li><a href="manage.html">Manage</a></li>
+        <li><a href="addUser.html">Add Employee</a></li>
+        <li><a href="register.html">Add UserAdmin</a></li>
+
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href=""> <span class="glyphicon glyphicon-user"></span> KMITL</a>
+          <ul class="dropdown-menu">
+            <li><a href="changepass.html">Setting</a></li>
+          </ul>
+        </li>
+
+        <li><a href="index.html"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Manage-->
+  <div class="container">
+    <h2>Manage your camera</h2>
+    <!-- Trigger the modal with a button -->
+    <button type="button" class="btn btn-info btn-lg rowadd" data-toggle="modal" onclick="addCam()">Add Camera</button>
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" role="dialog">
+      <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4>Camera Details</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="usr">Token:</label>
+              <input type="text" class="form-control" id="usr" value={{camera_token}}>
+            </div>
+            <div class="form-group">
+              <label for="usr">Camera Name:</label>
+              <input type="text" class="form-control" placeholder="max-32characters" id="usr">
+            </div>
+
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Camera Name</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>Token</th>
+            <th>Manage</th>
+          </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="cam in cameraList">
+
+                <td>{{cam.id}}</td>
+                <td>{{cam.name}}</td>
+                <td>{{cam.latitude}}</td>
+                <td>{{cam.longitude}}</td>
+                <td>{{cam.token}}</td>
+
+            <td><button ng-click="delete()" type="button" data-toggle="modal" data-target="#sure" class="btn btn-danger">Delete</button></td>
+
+            <div id="sure" class="modal fade" role="dialog">
+              <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                  <div class="modal-body">
+                    <p>Do you want to delete?</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Yes</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+</div>
+
+<script>
+  function getCookie(cname) {
+      name = cname + "=";
+      var decodedCookie = decodeURIComponent(document.cookie);
+      var ca = decodedCookie.split(';');
+      for(var i = 0; i <ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0) == ' ') {
+              c = c.substring(1);
+          }
+          if (c.indexOf(name) == 0) {
+              return c.substring(name.length, c.length);
+          }
+      }
+      return "";
+  }
+  var app = angular.module('myApp', [])
+	function generateToken(n) {
+	    var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	    var token = '';
+	    for(var i = 0; i < n; i++) {
+	        token += chars[Math.floor(Math.random() * chars.length)];
+	    }
+	    return token;
+	}
+  function addCam(){
+    console.log("pass");
+    window.location.href = "addCamera.html";
+  }
+  app.controller('myCtrl', function ($scope, $http) {
+      var token = 'Basic '+getCookie("auth");
+      $scope.config = {
+        headers: {
+          'Authorization' : token
+        }
+      };
+      $scope.data = {
+        'id': 1
+      };
+      $http.post("http://161.246.5.160:8000/camera/list/",$scope.data,$scope.config)
+      .then(function(response) {
+          $scope.cameraList = response.data;
+          console.log($scope.cameraList);
+      });
+      $scope.delete = function() {
+        window.location.href = "delete.html";
+      }
+  });
+
+</script>
+
+
+</body>
+
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+
+
+
+</html>

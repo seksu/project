@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>More Result</title>
+</head>
+<body>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+	<h1>More Result</h1>
+
+	<div ng-app="myApp" ng-controller="myCtrl">
+		<div ng-repeat="list in informationList">&emsp;
+			<br><a>Result : {{list.count+1}}</a>
+			<br><a>At : {{list.timestamp}}</a>
+			<br><a>File Name : {{list.video_path}}</a>
+			<a href={{list.download}}> download</a>
+			<br>
+		</div>
+	</div>
+
+<script>
+	var percent_color = 10;
+	var serverResult = null;
+	searchParams = new URLSearchParams(location.search);
+	console.log(searchParams.get('camera_token'));
+	var camera_token = searchParams.get('camera_token');
+
+	var app = angular.module('myApp', [])
+	function getCookie(cname) {
+			name = cname + "=";
+			var decodedCookie = decodeURIComponent(document.cookie);
+			var ca = decodedCookie.split(';');
+			for(var i = 0; i <ca.length; i++) {
+					var c = ca[i];
+					while (c.charAt(0) == ' ') {
+							c = c.substring(1);
+					}
+					if (c.indexOf(name) == 0) {
+							return c.substring(name.length, c.length);
+					}
+			}
+			return "";
+	}
+	function normalize(data){
+		if(data > 255 || data < 0){
+			if(data > 255){
+				return 255;
+			}
+			else if(data < 0){
+				return 0;
+			}
+		}
+		else{
+			return data;
+		}
+	}
+	function checkNull(value){
+			if(value == "null"){
+				return null;
+			}
+			else{
+				return value;
+			}
+	}
+
+	function checkNan(value){
+			if(isNaN(value)){
+				return null;
+			}
+			else{
+				return value;
+			}
+	}
+
+	face 			= checkNull(localStorage.getItem("face"));
+	red_min 	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(0, 2),16)*(100-percent_color)/100)));
+	red_max		= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(0, 2),16)*(100+percent_color)/100)));
+	green_min	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(2, 4),16)*(100-percent_color)/100)));
+	green_max	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(2, 4),16)*(100+percent_color)/100)));
+	blue_min 	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(4, 6),16)*(100-percent_color)/100)));
+	blue_max 	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(4, 6),16)*(100+percent_color)/100)));
+	date  		= checkNull(localStorage.getItem("date"));
+	toDate    = checkNull(localStorage.getItem("toDate"));
+	floor	    = checkNull(localStorage.getItem("floor"));
+
+	if(red_min && red_max && green_min && green_max && blue_min && blue_max){
+		red 	= [ red_min , red_max ];
+		green = [ green_min , green_max ];
+		blue 	= [ blue_min , blue_max ];
+	}
+	else{
+		red 	= [];
+		green = [];
+		blue 	= [];
+	}
+
+	if(date == null || toDate == null){
+		jdate = [];
+	}
+	else{
+		jdate = [date,toDate];
+	}
+
+	if(floor){
+		floor = [floor];
+	}
+	else{
+		floor = null;
+	}
+
+	function downloadPath(path){
+		temp = "/ipcam/"+path.slice(14,22)+"/"+path.slice(22,24)+"00/"+path.slice(6,32);
+		console.log("temp : "+temp);
+		return temp;
+	}
+
+	app.controller('myCtrl', function ($scope, $http) {
+		$scope.data = {
+				"pic_search"	: face,
+				"red"					: red,
+				"green"				: green,
+				"blue"				: blue,
+				"date"				: jdate,
+				"floor"				: floor
+		};
+		console.log($scope.data);
+		var token = 'Basic '+getCookie("auth");
+		$scope.config = {
+			headers: {
+				'Authorization' : token
+			}
+		};
+		$http.post("http://161.246.5.160:8000/search/", $scope.data , $scope.config)
+		.then(function(response) {
+			console.log("response from server : ");
+			console.log(response);
+			serverResult = response;
+			//listOfFileName(0,20);
+
+
+
+			$scope.informationList = [];
+			if(serverResult.data.length == 0){
+				console.log("No result");
+				$scope.masg = "No Result";
+			}
+			else{
+				console.log("server : ");
+				console.log(serverResult);
+				for(var i=0 ; i<serverResult.data.length ; i++){
+					if(serverResult.data[i].camera_token == camera_token){
+						if($scope.informationList.length == 0){
+							serverResult.data[i].download = downloadPath(serverResult.data[i].video_path);
+							serverResult.data[i].count = 0;
+							$scope.informationList = [serverResult.data[i]];
+							console.log($scope.informationList);
+
+							console.log(serverResult.data[i])
+						}
+
+						else if($scope.informationList.length){
+							serverResult.data[i].download = downloadPath(serverResult.data[i].video_path);;
+
+							storeInform = false;
+
+							for(var j=0 ; j<$scope.informationList.length ; j++){
+
+								//console.log("information : "+ $scope.informationList[j].video_path);
+								//console.log(serverResult.data[i].video_path);
+								if($scope.informationList[j].video_path == serverResult.data[i].video_path){
+									$scope.informationList[j].count++;
+									storeInform = true;
+								}
+							}
+
+							if(storeInform == false){
+								console.log("store false");
+								serverResult.data[i].count = 0;
+								$scope.informationList[$scope.informationList.length] = serverResult.data[i];
+							}
+						}
+					}
+				}
+				console.log($scope.informationList);
+			}
+		});
+	});
+</script>
+
+</body>
+</html>

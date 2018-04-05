@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Delete</title>
+
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="font/glyphicons-halflings-regular.ttf">
+
+</head>
+
+<body ng-app="myApp" ng-controller="myCtrl">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+  <!--Navber-->
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="home.html">Face Dect</a>
+      </div>
+      <ul class="nav navbar-nav">
+        <li><a href="search.html">Search</a></li>
+        <li><a href="live.html">Live Stream</a></li>
+        <li><a href="manage.html">Manage</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href=""> <span class="glyphicon glyphicon-user"></span> KMITL</a>
+          <ul class="dropdown-menu">
+            <li><a href="changepass.html">Setting</a></li>
+          </ul>
+        </li>
+
+        <li><a href="login.html"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container">
+      <h4>Camera ID to delete : <input type="text" name="CamraID" id="camera_id">
+      <br><input ng-click="submit()" type=button value="Submit">
+  </div>
+</body>
+
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+
+<script>
+  function getCookie(cname) {
+      name = cname + "=";
+      var decodedCookie = decodeURIComponent(document.cookie);
+      var ca = decodedCookie.split(';');
+      for(var i = 0; i <ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0) == ' ') {
+              c = c.substring(1);
+          }
+          if (c.indexOf(name) == 0) {
+              return c.substring(name.length, c.length);
+          }
+      }
+      return "";
+  }
+
+  var app = angular.module('myApp', [])
+	app.controller('myCtrl', function ($scope, $http) {
+    var token = 'Basic '+getCookie("auth");
+    $scope.config = {
+    	headers: {
+    		'Authorization' : token
+    	}
+    };
+    $scope.submit = function() {
+      var camera_id = parseInt(document.getElementById("camera_id").value)
+      $scope.data = {
+			  "camera_id": camera_id
+			};
+      console.log("data to post : ");
+      console.log($scope.data)
+      $http.post("http://161.246.5.160:8000/camera/delete/", $scope.data , $scope.config)
+      .then(function(response) {
+        console.log("response from server : ");
+        console.log(response);
+        serverResult = response;
+        $scope.resCamera = response;
+        window.location.href = "manage.html";
+      });
+    }
+  });
+</script>
+
+</html>

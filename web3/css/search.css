@@ -1,0 +1,32 @@
+.rowsearch {
+  margin: 10px;
+}
+
+.leftmargin {
+  margin-left: 5px;
+}
+
+.nearright {
+  margin-right: 0px;
+}
+.no-padding{
+  padding: 0;
+}
+
+.searchbox {
+  margin-top: 30px;
+  border-color: #ccc;
+  -webkit-box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 2px 3px 0px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -1px;
+}

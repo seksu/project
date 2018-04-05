@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<body ng-app="myApp">
+
+<h1>Result Google Map</h1>
+
+<div ng-controller="myCtrl">
+	<h1>{{masg}}</h1>
+	<div id="googleMap" style="width:100%;height:{{heigh}}px;"></div>
+</div>
+
+</body>
+<script>
+
+var percent_color = 10;
+var serverResult = null;
+
+var app = angular.module('myApp', [])
+console.log(screen.height);
+console.log(screen.width);
+
+console.log("face local : "+localStorage.getItem("face"));
+console.log("color local : "+localStorage.getItem("color"));
+console.log("date local : "+localStorage.getItem("date"));
+console.log("toDate local : "+localStorage.getItem("toDate"));
+console.log("floor local : "+localStorage.getItem("floor"));
+
+function getCookie(cname) {
+		name = cname + "=";
+		var decodedCookie = decodeURIComponent(document.cookie);
+		var ca = decodedCookie.split(';');
+		for(var i = 0; i <ca.length; i++) {
+				var c = ca[i];
+				while (c.charAt(0) == ' ') {
+						c = c.substring(1);
+				}
+				if (c.indexOf(name) == 0) {
+						return c.substring(name.length, c.length);
+				}
+		}
+		return "";
+}
+
+function normalize(data){
+	if(data > 255 || data < 0){
+		if(data > 255){
+			return 255;
+		}
+		else if(data < 0){
+			return 0;
+		}
+	}
+	else{
+		return data;
+	}
+}
+
+function checkNull(value){
+		if(value == "null"){
+			return null;
+		}
+		else{
+			return value;
+		}
+}
+
+function checkNan(value){
+		if(isNaN(value)){
+			return null;
+		}
+		else{
+			return value;
+		}
+}
+
+face 			= checkNull(localStorage.getItem("face"));
+red_min 	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(0, 2),16)*(100-percent_color)/100)));
+red_max		= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(0, 2),16)*(100+percent_color)/100)));
+green_min	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(2, 4),16)*(100-percent_color)/100)));
+green_max	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(2, 4),16)*(100+percent_color)/100)));
+blue_min 	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(4, 6),16)*(100-percent_color)/100)));
+blue_max 	= checkNan(normalize(Math.floor(parseInt(localStorage.getItem("color").slice(4, 6),16)*(100+percent_color)/100)));
+date  		= checkNull(localStorage.getItem("date"));
+toDate    = checkNull(localStorage.getItem("toDate"));
+floor	    = checkNull(localStorage.getItem("floor"));
+
+if(red_min && red_max && green_min && green_max && blue_min && blue_max){
+	red 	= [ red_min , red_max ];
+	green = [ green_min , green_max ];
+	blue 	= [ blue_min , blue_max ];
+}
+else{
+	red 	= [];
+	green = [];
+	blue 	= [];
+}
+
+if(date == null || toDate == null){
+	jdate = [];
+}
+else{
+	jdate = [date,toDate];
+}
+
+if(floor){
+	floor = [floor];
+}
+else{
+	floor = [];
+}
+
+console.log("red min		: " + red_min);
+console.log("red max		: " + red_max);
+console.log("green min 	: " + green_min);
+console.log("green max 	: " + green_max);
+console.log("blue min 	: " + blue_min);
+console.log("blue max 	: " + blue_max);
+
+app.controller('myCtrl', function ($scope, $http) {
+	$scope.heigh = Math.round(screen.height*0.75);
+	$scope.data = {
+		  "pic_search"	: face,
+		  "red"					: red,
+		  "green"				: green,
+		  "blue"				: blue,
+		  "date"				: jdate,
+		  "floor"				: floor,
+			"stage"				: 0
+	};
+	console.log($scope.data);
+
+	var token = 'Basic '+getCookie("auth");
+	$scope.config = {
+		headers: {
+			'Authorization' : token
+		}
+	};
+	$http.post("http://161.246.5.160:8000/search/", $scope.data , $scope.config)
+	.then(function(response) {
+		console.log("response from server : ");
+		console.log(response);
+		serverResult = response;
+		$scope.resCamera = response;
+		//listOfFileName(0,20);
+		if(serverResult.data.length == 0){
+			console.log("No result");
+			$scope.masg = "No Result";
+		}
+		myMap();
+	});
+});
+
+
+function myMap() {
+	if(serverResult.data.length){
+			console.log("hello");
+			console.log(serverResult.data[0].token);
+			var list_email = "";
+			for(var k=0 ; k<serverResult.data[0].list_email.length ; k++){
+				list_email +=  serverResult.data[0].list_email[k]+",";
+			}
+			console.log("pas thi");
+			var pos = [{
+				"camera_token" : serverResult.data[0].token,
+				"camera_name" : serverResult.data[0].camera_name,
+				"latitude" : serverResult.data[0].latitude,
+				"longitude" : serverResult.data[0].longitude,
+				"count" : serverResult.data[0].find_video,
+				"find_frame" : serverResult.data[0].find_frame,
+				"list_email" : list_email
+			}];
+
+			console.log("init pass");
+			for(var i=1 ; i<serverResult.data.length ; i++){
+					match = false;
+					for(var j=0 ; j<pos.length ; j++){
+							if(serverResult.data[i].token == pos[j].camera_token){
+									match = true;
+							}
+					}
+					if(match == false){
+						list_email = "";
+						for(var k=0 ; k<serverResult.data[i].list_email.length ; k++){
+							list_email +=  serverResult.data[i].list_email[k]+",";
+						}
+						console.log("list_email : "+list_email);
+						if(serverResult.data[i].list_video.length){
+							var temp = {
+								"camera_token" : serverResult.data[i].token,
+								"camera_name" : serverResult.data[i].camera_name,
+								"latitude" : serverResult.data[i].latitude,
+								"longitude" : serverResult.data[i].longitude,
+								"count" : serverResult.data[i].find_video,
+								"find_frame" : serverResult.data[i].find_frame,
+								"list_email" : list_email
+							};
+							pos.push(temp);
+						}
+					}
+			}
+			console.log("pos : ");
+			console.log(pos);
+
+			//var pos = [[13.72914869084607,100.77561866826704],[13.729202105113005,100.77524718231848],[13.72914087412306,100.77524852342299]];
+			//var pos = [[13.736122398558024,100.73857114448924],[13.755200010562762,100.877314254682],[13.64946588582388,100.77526024086819]];
+			var mapCanvas = document.getElementById("googleMap");
+			var avgLat = 0;
+			var avgLng = 0;
+			var maxDiff = 0;
+
+			for(var i=0 ; i<pos.length ; i++){
+				avgLat += parseFloat(pos[i].latitude);
+				avgLng += parseFloat(pos[i].longitude);
+			}
+
+			var posCenter = new google.maps.LatLng(avgLat/pos.length,avgLng/pos.length);
+			console.log("avgLat : "+avgLat);
+			console.log("avgLng : "+avgLng);
+			for(var i=0 ; i<pos.length-1 ; i++){
+				for(var j=i+1 ; j<pos.length ; j++){
+					if(Math.sqrt(Math.pow(pos[i].latitude-pos[j].latitude,2)+Math.pow(pos[i].longitude-pos[j].longitude,2)) > maxDiff){
+						maxDiff = Math.sqrt(Math.pow(pos[i].latitude-pos[j].latitude,2)+Math.pow(pos[i].longitude-pos[j].longitude,2));
+					}
+				}
+			}
+			var posDiff = 0.001;
+			var zoomIn = ((-1.354*(Math.log(maxDiff)/Math.log(Math.E)))+10.748)*0.9;
+			console.log("zoomIn : "+zoomIn);
+			var mapOptions = {center: posCenter, zoom: zoomIn};
+			var map = new google.maps.Map(mapCanvas, mapOptions);
+
+			tempPos = new google.maps.LatLng(pos[0].latitude,pos[0].longitude);
+			marker = new google.maps.Marker({position:tempPos});
+
+			gmarkers = [];
+			for(var i=0 ; i<pos.length ; i++){
+				console.log("token : ");
+				console.log(pos[i].camera_token);
+				console.log(pos[i].list_email)
+				tempHtml = "<div style='float:right;'>Camera Name : "+pos[i].camera_name+"<br>Find Result : "+pos[i].count+"<br>Find Frame : "+pos[i].find_frame+"<br>Face email : "+pos[i].list_email+"<br><a href='resultMore.html/?camera_token="+pos[i].camera_token+"&stage=1'"+">More</a>";
+				console.log("create mark" + i);
+				gmarkers[i] = createMarker(pos[i].latitude,pos[i].longitude,i,tempHtml);
+
+			}
+	}
+
+	function createMarker(lat,lng,at,html) {
+		tempPos = new google.maps.LatLng(lat,lng);
+	    var marker = new google.maps.Marker({
+	        position: tempPos,
+	        map: map
+	    });
+	    var infowindow = new google.maps.InfoWindow();
+	    google.maps.event.addListener(marker, 'click', function() {
+	        infowindow.setContent(html);
+        	infowindow.open(map, marker);
+	    });
+	    return marker;
+	}
+}
+
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTWnH_PbIriKzF18Xh2M-HpkSXhdh6TJo"></script>
+
+</body>
+</html>

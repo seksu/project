@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Add camera</title>
+
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="font/glyphicons-halflings-regular.ttf">
+
+</head>
+
+<body ng-app="myApp" ng-controller="myCtrl">
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+  <!--Navber-->
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="home.html">Face Dect</a>
+      </div>
+      <ul class="nav navbar-nav">
+        <li><a href="search.html">Search</a></li>
+        <li><a href="live.html">Live Stream</a></li>
+        <li><a href="manage.html">Manage</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href=""> <span class="glyphicon glyphicon-user"></span> KMITL</a>
+          <ul class="dropdown-menu">
+            <li><a href="changepass.html">Setting</a></li>
+          </ul>
+        </li>
+
+        <li><a href="login.html"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container">
+    <h2>Add Camera</h2>
+		<h4>Token : {{camToken}}<h4>
+		<h4>Camera Name : <input type="text" name="Camera Name" id="camera_name">
+		<h4>Floor : <input type="text" name="Floor" id="floor">
+		<h4>Click for select location</h4>
+		<input id="pac-input" style="width:30%;height:10%;font-size:2em;" class="controls" type="text" placeholder="Search Box">
+		<div id="map" style="width:100%;height:{{heigh}}px;"></div>
+    <!-- <div id="googleMap" style="width:100%;height:{{heigh}}px;"></div> -->
+		<br><input ng-click="submit()" type=button value="Submit">
+	</div>
+
+<script>
+	var user_latitude;
+	var user_longitude;
+	function getCookie(cname) {
+			name = cname + "=";
+			var decodedCookie = decodeURIComponent(document.cookie);
+			var ca = decodedCookie.split(';');
+			for(var i = 0; i <ca.length; i++) {
+					var c = ca[i];
+					while (c.charAt(0) == ' ') {
+							c = c.substring(1);
+					}
+					if (c.indexOf(name) == 0) {
+							return c.substring(name.length, c.length);
+					}
+			}
+			return "";
+	}
+
+	var app = angular.module('myApp', [])
+	function generateToken(n) {
+	    var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	    var token = '';
+	    for(var i = 0; i < n; i++) {
+	        token += chars[Math.floor(Math.random() * chars.length)];
+	    }
+	    return token;
+	}
+
+	app.controller('myCtrl', function ($scope, $http) {
+		$scope.camToken = generateToken(8);
+		$scope.heigh = Math.round(screen.height*0.55);
+		var token = 'Basic '+getCookie("auth");
+		$scope.config = {
+			headers: {
+				'Authorization' : token
+			}
+		};
+		$scope.submit = function() {
+			var user_camname = document.getElementById("camera_name").value
+			var user_floor = document.getElementById("floor").value
+			console.log("post data");
+			$scope.data = {
+			  "latitude": user_latitude,
+			  "token": $scope.camToken,
+			  "name": user_camname,
+			  "longitude": user_longitude,
+			  "floor": user_floor,
+			  "company": 1
+			};
+			console.log("data to post : ");
+			console.log($scope.data)
+			$http.post("http://161.246.5.160:8000/camera/add/", $scope.data , $scope.config)
+			.then(function(response) {
+				console.log("response from server : ");
+				console.log(response);
+				serverResult = response;
+				$scope.resCamera = response;
+				window.location.href = "manage.html";
+			});
+	  }
+
+
+	});
+
+	function initAutocomplete() {
+		var map = new google.maps.Map(document.getElementById('map'), {
+			center: {lat: 13.729220506976542, lng: 100.7755931872814},
+			zoom: 18,
+			mapTypeId: 'roadmap'
+		});
+
+		google.maps.event.addListener(map, 'click', function(event) {
+			placeMarker(map, event.latLng);
+		});
+
+		// Create the search box and link it to the UI element.
+		var input = document.getElementById('pac-input');
+		var searchBox = new google.maps.places.SearchBox(input);
+		map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+		// Bias the SearchBox results towards current map's viewport.
+		map.addListener('bounds_changed', function() {
+			searchBox.setBounds(map.getBounds());
+		});
+
+		var markers = [];
+		// Listen for the event fired when the user selects a prediction and retrieve
+		// more details for that place.
+		searchBox.addListener('places_changed', function() {
+			var places = searchBox.getPlaces();
+
+			if (places.length == 0) {
+				return;
+			}
+
+			// Clear out the old markers.
+			markers.forEach(function(marker) {
+				marker.setMap(null);
+			});
+			markers = [];
+
+			// For each place, get the icon, name and location.
+			var bounds = new google.maps.LatLngBounds();
+			places.forEach(function(place) {
+				if (!place.geometry) {
+					console.log("Returned place contains no geometry");
+					return;
+				}
+				var icon = {
+					url: place.icon,
+					size: new google.maps.Size(71, 71),
+					origin: new google.maps.Point(0, 0),
+					anchor: new google.maps.Point(17, 34),
+					scaledSize: new google.maps.Size(25, 25)
+				};
+
+				// Create a marker for each place.
+				markers.push(new google.maps.Marker({
+					map: map,
+					icon: icon,
+					title: place.name,
+					position: place.geometry.location
+				}));
+
+				if (place.geometry.viewport) {
+					// Only geocodes have viewport.
+					bounds.union(place.geometry.viewport);
+				} else {
+					bounds.extend(place.geometry.location);
+				}
+			});
+			map.fitBounds(bounds);
+		});
+	}
+	var marker;
+	function placeMarker(map, location) {
+		if(marker){
+			marker.setMap(null);
+		}
+		user_latitude = location.lat();
+		user_longitude = location.lng();
+	  marker = new google.maps.Marker({
+	    position: location,
+	    map: map
+	  });
+	  var infowindow = new google.maps.InfoWindow({
+	    content: 'Latitude: ' + location.lat() + '<br>Longitude: ' + location.lng()
+	  });
+	  infowindow.open(map,marker);
+	}
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBxitKIVdJtmeRy9MGdiZBrcr7QJ0WOUO0&libraries=places&callback=initAutocomplete" async defer></script>
+<!-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTWnH_PbIriKzF18Xh2M-HpkSXhdh6TJo&callback=myMap"></script> -->
+</body>
+</html>

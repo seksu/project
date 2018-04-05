@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>search</title>
+
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="font/glyphicons-halflings-regular.ttf">
+
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<body>
+
+  <!--Navber-->
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="index.html">Face Dect</a>
+      </div>
+      <ul class="nav navbar-nav">
+        <li><a href="search.html">Search</a></li>
+        <li><a href="live.html">Live Stream</a></li>
+        <li><a href="manage.html">Manage</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href=""> <span class="glyphicon glyphicon-user"></span> KMITL</a>
+          <ul class="dropdown-menu">
+            <li><a href="changepass.html">Setting</a></li>
+          </ul>
+        </li>
+
+        <li><a href="login.html"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container">
+    <h2>Search</h2>
+    <div ng-app="myApp" ng-controller="myCtrl">
+        <input type="checkbox" id="searchFace">
+        <input type="file" onchange="previewFile()">
+        <br>&emsp;<img src="" height="200" alt="Image Preview">
+        <br>
+        <br><input type="checkbox" id="searchShirtColor"> Check and select for search by shirt color :
+        <input type="color" id="myColor">
+        <br>
+        <br><input type="checkbox" id="searchDate"> Check and select for search by date :
+        <input type="date" id="myDate"> To <input type="date" id="myDateTo">
+        <br>
+        <br><input type="checkbox" id="searchFloor"> Check and select for search by floor : <br>
+
+        <div ng-repeat="cat in floors">&emsp;
+          <input type="checkbox" ng-model="cat.checked">
+              Floor {{ cat.floor }}
+          </input>
+        </div>
+        <br><button ng-click="search()">Search</button>
+    </div>
+  </div>
+</body>
+
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script>
+  var faceB64 = null;
+  var face    = null;
+  var color   = null;
+  var date    = null;
+  var floor   = null;
+  var toDate  = null;
+
+  localStorage.setItem("face" , null);
+  localStorage.setItem("color", null);
+  localStorage.setItem("date" , null);
+  localStorage.setItem("toDate" , null);
+  localStorage.setItem("floor", null);
+  localStorage.setItem("cam"  , null);
+
+  function getCookie(cname) {
+      name = cname + "=";
+      var decodedCookie = decodeURIComponent(document.cookie);
+      var ca = decodedCookie.split(';');
+      for(var i = 0; i <ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0) == ' ') {
+              c = c.substring(1);
+          }
+          if (c.indexOf(name) == 0) {
+              return c.substring(name.length, c.length);
+          }
+      }
+      return "";
+  }
+
+  var app = angular.module('myApp', []);
+  app.controller('myCtrl', function($scope, $http) {
+
+    var token = 'Basic '+getCookie("auth");
+    console.log(token);
+    $http({
+      method : "GET",
+      url : "http://161.246.5.160:8000/camera/",
+      headers: {
+        'Authorization' : token
+      },
+    }).then(function mySuccess(response) {
+
+        $scope.camera = response.data;
+        $scope.floors = [{
+          floor   : $scope.camera[0].floor,
+        }];
+        console.log($scope.camera);
+        $scope.GetValue = function () {
+            console.log($scope.floors);
+        }
+
+        for(var i = 0; i < $scope.camera.length; i++) {
+          var inFloor = true;
+          for(var j=0 ; j < $scope.floors.length ; j++) {
+            if($scope.camera[i].floor == $scope.floors[j].floor){
+              inFloor = false;
+            }
+          }
+          if(inFloor == true){
+            $scope.floors[$scope.floors.length] = $scope.camera[i].floor;
+          }
+        }
+
+        for (var i = 0; i < $scope.floors.length; i++) {
+            $scope.floors[i].checked = false;
+        }
+
+      }, function myError(response) {
+        console.log(response.statusText);
+    });
+    $scope.search = function() {
+        if(document.getElementById("searchFace").checked){
+            localStorage.setItem("face", face);
+            console.log("from local storage : "+localStorage.getItem("face"));
+        }
+        if(document.getElementById("searchShirtColor").checked){
+            color = document.getElementById("myColor").value;
+            color = color.replace('#','');
+            console.log(document.getElementById("myColor").value);
+            localStorage.setItem("color", color);
+        }
+        if(document.getElementById("searchDate").checked){
+            date = document.getElementById("myDate").value;
+            toDate = document.getElementById("myDateTo").value;
+            console.log(document.getElementById("myDate").value);
+            console.log(document.getElementById("myDateTo").value);
+            localStorage.setItem("date", date);
+            localStorage.setItem("toDate", toDate);
+        }
+        if(document.getElementById("searchFloor").checked){
+            $scope.floor = "";
+            console.log($scope.floors);
+            for(var i=0 ; i<$scope.floors.length ; i++) {
+              if($scope.floors[i].checked){
+                console.log("checked");
+                if($scope.floor){
+                  $scope.floor += ",";
+                }
+                $scope.floor += $scope.floors[i].floor;
+                console.log($scope.floor);
+              }
+            }
+            console.log($scope.floor);
+            localStorage.setItem("floor", $scope.floor);
+        }
+          window.location.href = "resultOnMap.html";
+          console.log("pass");
+    }
+  });
+
+
+  function previewFile(){
+     var preview = document.querySelector('img');
+     var file    = document.querySelector('input[type=file]').files[0];
+     var reader  = new FileReader();
+
+     reader.onloadend = function () {
+          preview.src = reader.result;
+          console.log("read = "+reader.result);
+          face = reader.result;
+          //localStorage.setItem("face" , face);
+     }
+
+     if (file) {
+          reader.readAsDataURL(file);
+     }
+     else {
+          preview.src = "";
+     }
+  }
+
+
+</script>
+
+
+</html>

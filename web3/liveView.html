@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+<h1>{{showDate + "/" + showMonth + "/" + showYear + " " + showHour + ":" + showMin + ":" + showSec + ":" + showFrame}}</h1>
+<img src="ipcam/{{path}}" height="360" width="640">
+<img src="ipcam/{{path2}}" height="360" width="640">
+<img src="ipcam/{{path3}}" height="360" width="640">
+</div>
+
+
+<script>
+	var app = angular.module('myApp', []);
+	app.controller('myCtrl', function($scope,$interval) {
+		stop = $interval(function(){
+			var d = new Date();
+
+	    	var Year = d.getFullYear();
+	    	var Month = d.getMonth()+1;
+	    	if(Month < 10){
+	    		Month = '0'+Month;
+	    	}
+	    	var GDate = d.getDate();
+	    	if(GDate < 10){
+	    		GDate = '0'+GDate;
+	    	}
+	    	var Hour = d.getHours();
+	    	if(Hour < 10){
+	    		Hour = '0'+Hour;
+	    	}
+	    	var Min = d.getMinutes()-1;
+	    	if(Min < 10 && Min >= 0){
+	    		Min = '0'+Min;
+	    	}
+	    	else if(Min < 0){
+	    		Min = 60+Min;
+	    	}
+	    	var Sec = d.getSeconds();
+	    	if(Sec < 10){
+	    		Sec = '0'+Sec;
+	    	}
+	    	var Milli = d.getMilliseconds();
+	    	var Frame = '01';
+	    	if(Milli > 600){
+	    		Frame = '03';
+	    	}
+	    	else if(Milli > 300){
+	    		Frame = '02'
+	    	}
+
+	    	$scope.showYear = Year;
+	    	$scope.showMonth = Month;
+	    	$scope.showDate = GDate;
+	    	$scope.showHour = Hour;
+	    	$scope.showMin = Min;
+	    	$scope.showSec = Sec;
+	    	$scope.showMilli = Milli;
+	    	$scope.showFrame = Frame;
+
+	    	$scope.path = Year+Month+GDate+'/'+Hour+'00/DpR6p4Nq'+Year+Month+GDate+Hour+Min+Sec+Frame+'.jpg'; 
+	    	$scope.path2 = Year+Month+GDate+'/'+Hour+'00/3VXgIALv'+Year+Month+GDate+Hour+Min+Sec+Frame+'.jpg'; 
+	    	$scope.path3 = Year+Month+GDate+'/'+Hour+'00/nbPORIE3'+Year+Month+GDate+Hour+Min+Sec+Frame+'.jpg'; 
+
+		},200);
+	});
+</script>
+
+</html>

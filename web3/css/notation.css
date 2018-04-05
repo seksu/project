@@ -1,0 +1,7 @@
+header.masthead {
+  background: url('picture/tvroom2013_25482.jpg') no-repeat center center scroll;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  background-size: cover;
+  -o-background-size: cover;
+}

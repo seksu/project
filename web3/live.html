@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+
+<head>
+  <meta charset="utf-8">
+  <title>Login</title>
+
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="font/glyphicons-halflings-regular.ttf">
+
+</head>
+
+<body ng-app="myApp" ng-controller="myCtrl">
+  <!--Navber-->
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="index.html">Face Dect</a>
+      </div>
+      <ul class="nav navbar-nav">
+        <li><a href="search.html">Search</a></li>
+        <li><a href="live.html">Live Stream</a></li>
+        <li><a href="manage.html">Manage</a></li>
+        <li><a href="addUser.html">Add Employee</a></li>
+        <li><a href="register.html">Add UserAdmin</a></li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href=""> <span class="glyphicon glyphicon-user"></span> KMITL</a>
+          <ul class="dropdown-menu">
+            <li><a href="changepass.html">Setting</a></li>
+          </ul>
+        </li>
+
+        <li><a href="index.html"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container">
+    <h2>Live streaming</h2>
+    <div class="dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Select Area<span class="caret"></span></button>
+      <ul class="dropdown-menu">
+        <li><a href="#">Floor-5</a></li>
+        <li><a href="#">Floor-9</a></li>
+      </ul>
+    </div>
+
+    <div class="panel-login text-center topmar">
+      <div class="gallery">
+        <a target="_blank" href="#">
+          <img src={{path1}} alt="Forest" width="700" height="400">
+        </a>
+        <div class="desc">Camera Name : {{camName1}}</div>
+      </div>
+      <div class="gallery">
+        <a target="_blank" href="#">
+          <img src={{path2}} alt="Forest" width="700" height="400">
+        </a>
+        <div class="desc">Camera Name : {{camName2}}</div>
+      </div>
+      <div class="gallery">
+        <a target="_blank" href="#">
+          <img src={{path3}} alt="Forest" width="700" height="400">
+        </a>
+        <div class="desc">Camera Name : {{camName3}}</div>
+      </div>
+      <div class="gallery">
+        <a target="_blank" href="#">
+          <img src={{path4}} alt="Forest" width="700" height="400">
+        </a>
+        <div class="desc">Camera Name : {{camName4}}</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+
+<script>
+  function getCookie(cname) {
+      name = cname + "=";
+      var decodedCookie = decodeURIComponent(document.cookie);
+      var ca = decodedCookie.split(';');
+      for(var i = 0; i <ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0) == ' ') {
+              c = c.substring(1);
+          }
+          if (c.indexOf(name) == 0) {
+              return c.substring(name.length, c.length);
+          }
+      }
+      return "";
+  }
+	var app = angular.module('myApp', []);
+	app.controller('myCtrl', function($scope,$interval,$http) {
+    var token = 'Basic '+getCookie("auth");
+    $scope.config = {
+      headers: {
+        'Authorization' : token
+      }
+    };
+    $scope.genToken = function() {
+        $scope.camera_token = generateToken(8);
+    };
+    $scope.data = {
+      'id': 1
+    };
+    $http.post("http://161.246.5.160:8000/camera/list/",$scope.data,$scope.config)
+    .then(function(response) {
+        $scope.cameraList = response.data;
+        console.log($scope.cameraList);
+    });
+    console.log("pass");
+		stop = $interval(function(){
+			var d = new Date();
+
+	    	var Year = d.getFullYear();
+	    	var Month = d.getMonth()+1;
+	    	if(Month < 10){
+	    		Month = '0'+Month;
+	    	}
+	    	var GDate = d.getDate();
+	    	if(GDate < 10){
+	    		GDate = '0'+GDate;
+	    	}
+	    	var Hour = d.getHours();
+	    	if(Hour < 10){
+	    		Hour = '0'+Hour;
+	    	}
+	    	var Min = d.getMinutes()-1;
+	    	if(Min < 10 && Min >= 0){
+	    		Min = '0'+Min;
+	    	}
+	    	else if(Min < 0){
+	    		Min = 60+Min;
+	    	}
+	    	var Sec = d.getSeconds();
+	    	if(Sec < 10){
+	    		Sec = '0'+Sec;
+	    	}
+	    	var Milli = d.getMilliseconds();
+	    	var Frame = '01';
+	    	if(Milli > 600){
+	    		Frame = '03';
+	    	}
+	    	else if(Milli > 300){
+	    		Frame = '02'
+	    	}
+
+	    	$scope.showYear = Year;
+	    	$scope.showMonth = Month;
+	    	$scope.showDate = GDate;
+	    	$scope.showHour = Hour;
+	    	$scope.showMin = Min;
+	    	$scope.showSec = Sec;
+	    	$scope.showMilli = Milli;
+	    	$scope.showFrame = Frame;
+
+        //console.log($scope.cameraList);
+        index = 0;
+        if(index < $scope.cameraList.length-index){
+            $scope.camName1 = $scope.cameraList[index].name;
+            $scope.path1 = "ipcam/"+Year+Month+GDate+'/'+Hour+'00/'+$scope.cameraList[index].token+Year+Month+GDate+Hour+Min+Sec+Frame+'.jpg';
+        }
+        else{
+          $scope.camName1 = null;
+          $scope.path1 = null;
+        }
+        if(index+1 < $scope.cameraList.length-index){
+            $scope.camName2 = $scope.cameraList[index+1].name;
+            $scope.path2 = "ipcam/"+Year+Month+GDate+'/'+Hour+'00/'+$scope.cameraList[index+1].token+Year+Month+GDate+Hour+Min+Sec+Frame+'.jpg';
+        }
+        else{
+          $scope.camName1 = null;
+          $scope.path1 = null;
+        }
+        if(index+2 < $scope.cameraList.length-index){
+            $scope.camName3 = $scope.cameraList[index+2].name;
+            $scope.path3 = "ipcam/"+Year+Month+GDate+'/'+Hour+'00/'+$scope.cameraList[index+2].token+Year+Month+GDate+Hour+Min+Sec+Frame+'.jpg';
+        }
+        else{
+          $scope.camName2 = null;
+          $scope.path2 = null;
+        }
+        if(index+3 < $scope.cameraList.length-index){
+            $scope.camName3 = $scope.cameraList[index+3].name;
+            $scope.path3 = "ipcam/"+Year+Month+GDate+'/'+Hour+'00/'+$scope.cameraList[index+3].token+Year+Month+GDate+Hour+Min+Sec+Frame+'.jpg';
+        }
+        else{
+          $scope.camName4 = null;
+          $scope.path4 = null;
+        }
+		},200);
+	});
+</script>
+
+</html>
